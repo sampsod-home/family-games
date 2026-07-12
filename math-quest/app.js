@@ -166,6 +166,22 @@ const state = {
   theme: (() => { try { return localStorage.getItem('mathquest_theme') || 'sunset'; } catch (e) { return 'sunset'; } })()
 };
 
+const toolbox = {
+  open: false,
+  tool: 'blocks',          // blocks | numberline | tenframe
+  blocks: [],              // block values, e.g. [10, 10, 5, 1]
+  nlStart: null,           // number line starting value
+  nlHops: [],              // jump amounts, e.g. [10, 10, -1]
+  frame: Array(20).fill(0) // ten frames: 0 empty, 1 blue, 2 red
+};
+
+function resetToolboxWork() {
+  toolbox.blocks = [];
+  toolbox.nlStart = null;
+  toolbox.nlHops = [];
+  toolbox.frame = Array(20).fill(0);
+}
+
 const appEl = document.getElementById('app');
 
 function grade() { return GRADES[state.grade] || GRADES.g2; }
@@ -301,6 +317,7 @@ function startRound(unitId, label) {
     screen: 'round', queue: buildQueue(unitId), idx: 0, tries: 0,
     phase: 'ask', results: [], lastUnit: unitId, lastLabel: label
   });
+  resetToolboxWork();
   render();
 }
 
@@ -360,12 +377,14 @@ function nextQuestion() {
     state.idx += 1;
     state.tries = 0;
     state.phase = 'ask';
-    render();       // re-render: question mode may change between type/choice
+    resetToolboxWork();   // fresh scratchpad for each new problem
+    render();             // re-render: question mode may change between type/choice
   }
 }
 
 function goHome() {
   state.screen = 'home';
+  toolbox.open = false;
   render();
 }
 
@@ -383,6 +402,7 @@ function render() {
   else if (state.screen === 'skills') renderSkills();
   else if (state.screen === 'round') renderRound();
   else if (state.screen === 'done') renderDone();
+  renderToolbox();
 }
 
 /* ---------- home ---------- */
@@ -515,6 +535,7 @@ function renderRound() {
       <div class="round-bar">
         <button class="back-btn" id="quitBtn">← Quit</button>
         <div class="dots" id="dots"></div>
+        <button class="back-btn tools-btn" id="toolsBtn">🧰 Tools</button>
         <div class="stars" id="stars">★ 0</div>
       </div>
       <div class="card round-card" id="roundCard">
@@ -535,6 +556,7 @@ function renderRound() {
   state.queue.forEach(() => dots.appendChild(el('<span class="dot"></span>')));
 
   screen.querySelector('#quitBtn').addEventListener('click', goHome);
+  screen.querySelector('#toolsBtn').addEventListener('click', () => { toolbox.open = !toolbox.open; renderToolbox(); });
   screen.querySelector('#readBtn').addEventListener('click', speakQuestion);
 
   if (item.mode === 'choice') {
@@ -603,6 +625,184 @@ function shakeCard() {
   card.classList.remove('shake');
   void card.offsetWidth;
   card.classList.add('shake');
+}
+
+/* ---------- toolbox ---------- */
+const toolboxEl = (() => {
+  const d = document.createElement('aside');
+  d.id = 'toolbox';
+  document.body.appendChild(d);
+  return d;
+})();
+
+const BLOCK_TYPES = [
+  { v: 100, label: '100', cls: 'hundred' },
+  { v: 10,  label: '10',  cls: 'ten' },
+  { v: 5,   label: '5',   cls: 'five' },
+  { v: 1,   label: '1',   cls: 'one' }
+];
+const NL_JUMPS = [-100, -10, -5, -1, 1, 5, 10, 100];
+
+function renderToolbox() {
+  const show = toolbox.open && state.screen === 'round';
+  toolboxEl.classList.toggle('open', show);
+  document.body.classList.toggle('toolbox-open', show);
+  if (!show) { toolboxEl.innerHTML = ''; return; }
+
+  const tabs = [
+    { id: 'blocks',     label: '🧱 Blocks' },
+    { id: 'numberline', label: '➡️ Number Line' },
+    { id: 'tenframe',   label: '🔟 Ten Frame' }
+  ];
+
+  toolboxEl.innerHTML = `
+    <div class="tb-head">
+      <span class="tb-title">Tool Kit</span>
+      <button class="tb-close" id="tbClose">✕</button>
+    </div>
+    <div class="tb-tabs">
+      ${tabs.map(t => `<button class="tb-tab${toolbox.tool === t.id ? ' active' : ''}" data-tool="${t.id}">${t.label}</button>`).join('')}
+    </div>
+    <div class="tb-body" id="tbBody"></div>`;
+
+  toolboxEl.querySelector('#tbClose').addEventListener('click', () => { toolbox.open = false; renderToolbox(); });
+  toolboxEl.querySelectorAll('.tb-tab').forEach(b => {
+    b.addEventListener('click', () => { toolbox.tool = b.dataset.tool; renderToolbox(); });
+  });
+
+  const body = toolboxEl.querySelector('#tbBody');
+  if (toolbox.tool === 'blocks') renderBlocksTool(body);
+  else if (toolbox.tool === 'numberline') renderNumberLineTool(body);
+  else renderTenFrameTool(body);
+}
+
+/* --- blocks tool --- */
+function renderBlocksTool(body) {
+  const total = toolbox.blocks.reduce((s, v) => s + v, 0);
+  const sorted = [...toolbox.blocks].sort((a, b) => b - a);
+
+  body.innerHTML = `
+    <div class="tb-hint">Tap to add blocks. Tap a block to take it away.</div>
+    <div class="tb-block-btns">
+      ${BLOCK_TYPES.map(t => `<button class="tb-add ${t.cls}" data-v="${t.v}">+${t.label}</button>`).join('')}
+    </div>
+    <div class="tb-total">${total}</div>
+    <div class="tb-pile" id="tbPile">
+      ${sorted.map((v, i) => {
+        const t = BLOCK_TYPES.find(b => b.v === v);
+        return `<button class="tb-block ${t.cls}" data-i="${i}" title="tap to remove">${t.label}</button>`;
+      }).join('')}
+    </div>
+    <button class="tb-clear" id="tbClear">Clear</button>`;
+
+  body.querySelectorAll('.tb-add').forEach(b => {
+    b.addEventListener('click', () => { toolbox.blocks.push(+b.dataset.v); renderToolbox(); });
+  });
+  body.querySelectorAll('.tb-block').forEach(b => {
+    b.addEventListener('click', () => {
+      const sortedVals = [...toolbox.blocks].sort((x, y) => y - x);
+      const v = sortedVals[+b.dataset.i];
+      const idx = toolbox.blocks.indexOf(v);
+      if (idx > -1) toolbox.blocks.splice(idx, 1);
+      renderToolbox();
+    });
+  });
+  body.querySelector('#tbClear').addEventListener('click', () => { toolbox.blocks = []; renderToolbox(); });
+}
+
+/* --- number line tool --- */
+function renderNumberLineTool(body) {
+  if (toolbox.nlStart === null) {
+    body.innerHTML = `
+      <div class="tb-hint">Where does the number line start?</div>
+      <form id="nlForm" class="tb-start-row">
+        <input class="tb-start-input" id="nlStartInput" inputmode="numeric" pattern="-?[0-9]*" placeholder="start">
+        <button class="tb-set" type="submit">Set</button>
+      </form>`;
+    body.querySelector('#nlForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const v = parseInt(body.querySelector('#nlStartInput').value, 10);
+      if (!isNaN(v)) { toolbox.nlStart = v; renderToolbox(); }
+    });
+    setTimeout(() => { const i = body.querySelector('#nlStartInput'); if (i) i.focus(); }, 50);
+    return;
+  }
+
+  const values = [toolbox.nlStart];
+  for (const h of toolbox.nlHops) values.push(values[values.length - 1] + h);
+  const current = values[values.length - 1];
+
+  const GAP = 68, PAD = 42, Y = 78;
+  const width = PAD * 2 + Math.max(1, values.length - 1) * GAP;
+  let svg = `<svg width="${width}" height="112" viewBox="0 0 ${width} 112" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<line x1="6" y1="${Y}" x2="${width - 6}" y2="${Y}" stroke="#28324E" stroke-width="3" stroke-linecap="round"/>`;
+  values.forEach((v, i) => {
+    const x = PAD + i * GAP;
+    svg += `<circle cx="${x}" cy="${Y}" r="6" fill="${i === values.length - 1 ? 'var(--accent)' : '#28324E'}"/>`;
+    svg += `<text x="${x}" y="${Y + 26}" text-anchor="middle" font-family="Fredoka, sans-serif" font-size="17" font-weight="600" fill="#28324E">${v}</text>`;
+    if (i > 0) {
+      const x0 = PAD + (i - 1) * GAP, mid = (x0 + x) / 2;
+      const hop = toolbox.nlHops[i - 1];
+      svg += `<path d="M ${x0} ${Y - 6} Q ${mid} ${Y - 52} ${x} ${Y - 6}" fill="none" stroke="var(--accent)" stroke-width="3"/>`;
+      svg += `<text x="${mid}" y="${Y - 42}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="14" font-weight="800" fill="#28324E">${hop > 0 ? '+' + hop : hop}</text>`;
+    }
+  });
+  svg += '</svg>';
+
+  body.innerHTML = `
+    <div class="tb-hint">Tap a jump. Each hop lands on the next number.</div>
+    <div class="tb-jump-row">
+      ${NL_JUMPS.map(j => `<button class="tb-jump${j > 0 ? ' plus' : ' minus'}" data-j="${j}">${j > 0 ? '+' + j : j}</button>`).join('')}
+    </div>
+    <div class="tb-total">${current}</div>
+    <div class="tb-nl-scroll" id="nlScroll">${svg}</div>
+    <div class="tb-btn-row">
+      <button class="tb-clear" id="nlUndo">↩ Undo</button>
+      <button class="tb-clear" id="nlClear">Clear</button>
+    </div>`;
+
+  body.querySelectorAll('.tb-jump').forEach(b => {
+    b.addEventListener('click', () => {
+      toolbox.nlHops.push(+b.dataset.j);
+      renderToolbox();
+      const sc = document.getElementById('nlScroll');
+      if (sc) sc.scrollLeft = sc.scrollWidth;
+    });
+  });
+  body.querySelector('#nlUndo').addEventListener('click', () => { toolbox.nlHops.pop(); renderToolbox(); });
+  body.querySelector('#nlClear').addEventListener('click', () => { toolbox.nlStart = null; toolbox.nlHops = []; renderToolbox(); });
+  const sc = body.querySelector('#nlScroll');
+  if (sc) sc.scrollLeft = sc.scrollWidth;
+}
+
+/* --- ten frame tool --- */
+function renderTenFrameTool(body) {
+  const blue = toolbox.frame.filter(c => c === 1).length;
+  const red = toolbox.frame.filter(c => c === 2).length;
+
+  const frameHtml = (offset) => `
+    <div class="tb-frame">
+      ${Array.from({ length: 10 }, (_, i) => {
+        const c = toolbox.frame[offset + i];
+        return `<button class="tb-cell${c === 1 ? ' blue' : c === 2 ? ' red' : ''}" data-i="${offset + i}"></button>`;
+      }).join('')}
+    </div>`;
+
+  body.innerHTML = `
+    <div class="tb-hint">Tap a square: once for blue, twice for red, three times to clear.</div>
+    <div class="tb-total">${blue + red === 0 ? '0' : `${blue} + ${red} = ${blue + red}`}</div>
+    ${frameHtml(0)}
+    ${frameHtml(10)}
+    <button class="tb-clear" id="tfClear">Clear</button>`;
+
+  body.querySelectorAll('.tb-cell').forEach(b => {
+    b.addEventListener('click', () => {
+      const i = +b.dataset.i;
+      toolbox.frame[i] = (toolbox.frame[i] + 1) % 3;
+      renderToolbox();
+    });
+  });
+  body.querySelector('#tfClear').addEventListener('click', () => { toolbox.frame = Array(20).fill(0); renderToolbox(); });
 }
 
 /* ---------- done ---------- */
