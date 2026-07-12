@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sampson Family Games</title>
+  <title>Game Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Nunito', sans-serif;
-      background: linear-gradient(160deg, #FFF8EF 0%, #FFEED9 60%, #FFE3C2 100%);
+      background: linear-gradient(160deg, #F4F7FF 0%, #E4EBFC 60%, #D3DEF8 100%);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -21,11 +21,11 @@
     h1 {
       font-family: 'Fredoka', sans-serif;
       font-size: clamp(2rem, 6vw, 3.2rem);
-      color: #4A3728;
+      color: #28324E;
       margin: 24px 0 8px;
       text-align: center;
     }
-    p.tag { color: #8a6f57; font-weight: 600; margin-bottom: 36px; text-align: center; }
+    p.tag { color: #8A93AC; font-weight: 600; margin-bottom: 36px; text-align: center; }
     .games {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 280px));
@@ -39,24 +39,23 @@
       border-radius: 24px;
       padding: 28px 24px;
       text-decoration: none;
-      box-shadow: 0 6px 20px rgba(74, 55, 40, .12);
+      box-shadow: 0 6px 20px rgba(40, 50, 78, .12);
       transition: transform .15s ease, box-shadow .15s ease;
       text-align: center;
       border: 3px solid transparent;
     }
     a.card:hover, a.card:focus-visible {
       transform: translateY(-4px) scale(1.02);
-      box-shadow: 0 12px 28px rgba(74, 55, 40, .18);
-      border-color: #FFB347;
+      box-shadow: 0 12px 28px rgba(40, 50, 78, .18);
+      border-color: #5B7BD6;
     }
     .card .emoji { font-size: 3.5rem; display: block; margin-bottom: 12px; }
-    .card h2 { font-family: 'Fredoka', sans-serif; color: #4A3728; font-size: 1.4rem; margin-bottom: 6px; }
-    .card p { color: #8a6f57; font-weight: 600; font-size: .95rem; }
-    footer { margin-top: auto; padding-top: 40px; color: #b39a80; font-weight: 600; font-size: .85rem; }
+    .card h2 { font-family: 'Fredoka', sans-serif; color: #28324E; font-size: 1.4rem; margin-bottom: 6px; }
+    .card p { color: #8A93AC; font-weight: 600; font-size: .95rem; }
   </style>
 </head>
 <body>
-  <h1>🎮 Sampson Family Games</h1>
+  <h1>🎮 Game Center</h1>
   <p class="tag">Pick a game and have fun!</p>
   <div class="games">
     <a class="card" href="spell-quest/">
@@ -65,6 +64,5 @@
       <p>Hear a word, spell it, master it!</p>
     </a>
   </div>
-  <footer>Made with ❤️ by Dad</footer>
 </body>
 </html>
