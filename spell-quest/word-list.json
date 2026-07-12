@@ -1,0 +1,512 @@
+[
+  {
+    "name": "Short a",
+    "words": [
+      "cat",
+      "bag",
+      "hat",
+      "map",
+      "ran",
+      "jam",
+      "flag",
+      "plan",
+      "trap",
+      "clap"
+    ]
+  },
+  {
+    "name": "Short e",
+    "words": [
+      "bed",
+      "pen",
+      "red",
+      "step",
+      "help",
+      "left",
+      "tent",
+      "rest",
+      "neck",
+      "spell"
+    ]
+  },
+  {
+    "name": "Short i",
+    "words": [
+      "pig",
+      "win",
+      "trip",
+      "skip",
+      "flip",
+      "stick",
+      "hill",
+      "milk",
+      "fist",
+      "ring"
+    ]
+  },
+  {
+    "name": "Short o",
+    "words": [
+      "hot",
+      "stop",
+      "rock",
+      "clock",
+      "block",
+      "frog",
+      "drop",
+      "spot",
+      "shop",
+      "soft"
+    ]
+  },
+  {
+    "name": "Short u",
+    "words": [
+      "sun",
+      "run",
+      "jump",
+      "duck",
+      "luck",
+      "truck",
+      "plug",
+      "club",
+      "brush",
+      "trust"
+    ]
+  },
+  {
+    "name": "Long a",
+    "words": [
+      "make",
+      "lake",
+      "cake",
+      "take",
+      "game",
+      "same",
+      "name",
+      "late",
+      "gate",
+      "race"
+    ]
+  },
+  {
+    "name": "Long i",
+    "words": [
+      "bike",
+      "time",
+      "ride",
+      "hide",
+      "line",
+      "mine",
+      "side",
+      "five",
+      "kite",
+      "smile"
+    ]
+  },
+  {
+    "name": "Long o",
+    "words": [
+      "home",
+      "hope",
+      "rope",
+      "note",
+      "nose",
+      "joke",
+      "bone",
+      "cone",
+      "hole",
+      "stove"
+    ]
+  },
+  {
+    "name": "Long u",
+    "words": [
+      "cute",
+      "cube",
+      "tube",
+      "mule",
+      "tune",
+      "rude",
+      "huge",
+      "use",
+      "June",
+      "flute"
+    ]
+  },
+  {
+    "name": "Silent e Review",
+    "words": [
+      "plane",
+      "shine",
+      "stone",
+      "smoke",
+      "brave",
+      "pride",
+      "close",
+      "shape",
+      "slide",
+      "crane"
+    ]
+  },
+  {
+    "name": "ai / ay",
+    "words": [
+      "rain",
+      "train",
+      "mail",
+      "tail",
+      "play",
+      "day",
+      "may",
+      "stay",
+      "way",
+      "tray"
+    ]
+  },
+  {
+    "name": "ee / ea",
+    "words": [
+      "tree",
+      "see",
+      "meet",
+      "seat",
+      "read",
+      "team",
+      "clean",
+      "leaf",
+      "beach",
+      "mean"
+    ]
+  },
+  {
+    "name": "oa / ow",
+    "words": [
+      "boat",
+      "road",
+      "coat",
+      "goat",
+      "soap",
+      "snow",
+      "grow",
+      "slow",
+      "blow",
+      "throw"
+    ]
+  },
+  {
+    "name": "oo",
+    "words": [
+      "moon",
+      "food",
+      "school",
+      "room",
+      "spoon",
+      "book",
+      "look",
+      "cook",
+      "good",
+      "foot"
+    ]
+  },
+  {
+    "name": "Mixed Vowel Teams",
+    "words": [
+      "train",
+      "seat",
+      "goat",
+      "moon",
+      "play",
+      "clean",
+      "snow",
+      "book",
+      "rain",
+      "team"
+    ]
+  },
+  {
+    "name": "ar",
+    "words": [
+      "car",
+      "star",
+      "park",
+      "farm",
+      "hard",
+      "start",
+      "bark",
+      "chart",
+      "yard",
+      "dark"
+    ]
+  },
+  {
+    "name": "er / ir / ur",
+    "words": [
+      "her",
+      "bird",
+      "turn",
+      "girl",
+      "burn",
+      "shirt",
+      "nurse",
+      "first",
+      "hurt",
+      "third"
+    ]
+  },
+  {
+    "name": "or",
+    "words": [
+      "for",
+      "fork",
+      "storm",
+      "corn",
+      "short",
+      "horse",
+      "sport",
+      "north",
+      "born",
+      "store"
+    ]
+  },
+  {
+    "name": "Mixed r-Controlled",
+    "words": [
+      "farmer",
+      "teacher",
+      "corner",
+      "winter",
+      "sister",
+      "better",
+      "marker",
+      "driver",
+      "letter",
+      "faster"
+    ]
+  },
+  {
+    "name": "r-Controlled Review",
+    "words": [
+      "carpet",
+      "turning",
+      "forklift",
+      "starter",
+      "cornered",
+      "birthday",
+      "parking",
+      "market",
+      "shirted",
+      "farmhouse"
+    ]
+  },
+  {
+    "name": "ch / sh",
+    "words": [
+      "ship",
+      "shop",
+      "fish",
+      "dish",
+      "chat",
+      "chop",
+      "brush",
+      "shell",
+      "shine",
+      "shock"
+    ]
+  },
+  {
+    "name": "th",
+    "words": [
+      "thin",
+      "thick",
+      "bath",
+      "path",
+      "three",
+      "throw",
+      "thank",
+      "think",
+      "them",
+      "there"
+    ]
+  },
+  {
+    "name": "wh / ph",
+    "words": [
+      "when",
+      "what",
+      "which",
+      "whale",
+      "wheel",
+      "phone",
+      "photo",
+      "graph",
+      "phrase",
+      "whip"
+    ]
+  },
+  {
+    "name": "Final Blends",
+    "words": [
+      "lamp",
+      "tent",
+      "hand",
+      "milk",
+      "jump",
+      "nest",
+      "bank",
+      "wind",
+      "belt",
+      "hunt"
+    ]
+  },
+  {
+    "name": "Double Consonants",
+    "words": [
+      "bell",
+      "hill",
+      "miss",
+      "pass",
+      "doll",
+      "full",
+      "buzz",
+      "grass",
+      "dress",
+      "class"
+    ]
+  },
+  {
+    "name": "-ed",
+    "words": [
+      "jumped",
+      "helped",
+      "played",
+      "looked",
+      "worked",
+      "called",
+      "washed",
+      "walked",
+      "opened",
+      "lived"
+    ]
+  },
+  {
+    "name": "-ing",
+    "words": [
+      "jumping",
+      "helping",
+      "playing",
+      "looking",
+      "working",
+      "calling",
+      "washing",
+      "walking",
+      "opening",
+      "living"
+    ]
+  },
+  {
+    "name": "-s / -es",
+    "words": [
+      "cats",
+      "dogs",
+      "buses",
+      "wishes",
+      "boxes",
+      "foxes",
+      "trees",
+      "books",
+      "cars",
+      "houses"
+    ]
+  },
+  {
+    "name": "Contractions",
+    "words": [
+      "can't",
+      "don't",
+      "won't",
+      "isn't",
+      "it's",
+      "I'm",
+      "we're",
+      "they're",
+      "he's",
+      "she's"
+    ]
+  },
+  {
+    "name": "Compound Words",
+    "words": [
+      "sunshine",
+      "basketball",
+      "football",
+      "rainbow",
+      "playground",
+      "toothbrush",
+      "haircut",
+      "notebook",
+      "bedroom",
+      "farmhouse"
+    ]
+  },
+  {
+    "name": "Two-Syllable Words",
+    "words": [
+      "paper",
+      "tiger",
+      "robot",
+      "open",
+      "music",
+      "lady",
+      "baby",
+      "water",
+      "table",
+      "teacher"
+    ]
+  },
+  {
+    "name": "Prefixes",
+    "words": [
+      "redo",
+      "unlock",
+      "replay",
+      "unfair",
+      "untie",
+      "retell",
+      "unpack",
+      "repaint",
+      "unhappy",
+      "rewrite"
+    ]
+  },
+  {
+    "name": "Suffixes",
+    "words": [
+      "hopeful",
+      "helpful",
+      "careful",
+      "joyful",
+      "thankful",
+      "painter",
+      "teacher",
+      "runner",
+      "player",
+      "reader"
+    ]
+  },
+  {
+    "name": "End-of-Year Review",
+    "words": [
+      "reading",
+      "helpful",
+      "sunshine",
+      "replay",
+      "teacher",
+      "looking",
+      "runner",
+      "football",
+      "unlock",
+      "playground"
+    ]
+  }
+]
