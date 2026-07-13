@@ -169,10 +169,12 @@ const state = {
 const toolbox = {
   open: false,
   tool: 'blocks',          // blocks | numberline | tenframe
-  blocks: [],              // block values, e.g. [10, 10, 5, 1]
+  blocks: [],              // [{ v, out }] — out = crossed off in take-away mode
+  blocksMode: 'add',       // add | takeaway
   nlStart: null,           // number line starting value
   nlHops: [],              // jump amounts, e.g. [10, 10, -1]
-  frame: Array(20).fill(0) // ten frames: 0 empty, 1 blue, 2 red
+  frame: Array(20).fill(0),// ten frames: 0 empty, 1 blue, 2 red
+  frameMode: 'add'         // add | takeaway
 };
 
 function resetToolboxWork() {
@@ -679,32 +681,46 @@ function renderToolbox() {
 
 /* --- blocks tool --- */
 function renderBlocksTool(body) {
-  const total = toolbox.blocks.reduce((s, v) => s + v, 0);
-  const sorted = [...toolbox.blocks].sort((a, b) => b - a);
+  const takeaway = toolbox.blocksMode === 'takeaway';
+  const sumAll = toolbox.blocks.reduce((s, b) => s + b.v, 0);
+  const sumOut = toolbox.blocks.filter(b => b.out).reduce((s, b) => s + b.v, 0);
+  const sorted = [...toolbox.blocks].sort((a, b) => b.v - a.v);
 
   body.innerHTML = `
-    <div class="tb-hint">Tap to add blocks. Tap a block to take it away.</div>
+    <div class="tb-mode-row">
+      <button class="tb-mode${takeaway ? '' : ' active'}" data-m="add">➕ Build</button>
+      <button class="tb-mode${takeaway ? ' active' : ''}" data-m="takeaway">➖ Take Away</button>
+    </div>
+    <div class="tb-hint">${takeaway
+      ? 'Tap a block to take it away (✕). Tap it again to bring it back.'
+      : 'Tap to add blocks. Tap a block to remove it.'}</div>
     <div class="tb-block-btns">
       ${BLOCK_TYPES.map(t => `<button class="tb-add ${t.cls}" data-v="${t.v}">+${t.label}</button>`).join('')}
     </div>
-    <div class="tb-total">${total}</div>
+    <div class="tb-total">${sumOut ? `${sumAll} − ${sumOut} = ${sumAll - sumOut}` : sumAll}</div>
     <div class="tb-pile" id="tbPile">
-      ${sorted.map((v, i) => {
-        const t = BLOCK_TYPES.find(b => b.v === v);
-        return `<button class="tb-block ${t.cls}" data-i="${i}" title="tap to remove">${t.label}</button>`;
+      ${sorted.map((b, i) => {
+        const t = BLOCK_TYPES.find(x => x.v === b.v);
+        return `<button class="tb-block ${t.cls}${b.out ? ' out' : ''}" data-i="${i}">${t.label}</button>`;
       }).join('')}
     </div>
     <button class="tb-clear" id="tbClear">Clear</button>`;
 
+  body.querySelectorAll('.tb-mode').forEach(b => {
+    b.addEventListener('click', () => { toolbox.blocksMode = b.dataset.m; renderToolbox(); });
+  });
   body.querySelectorAll('.tb-add').forEach(b => {
-    b.addEventListener('click', () => { toolbox.blocks.push(+b.dataset.v); renderToolbox(); });
+    b.addEventListener('click', () => { toolbox.blocks.push({ v: +b.dataset.v, out: false }); renderToolbox(); });
   });
   body.querySelectorAll('.tb-block').forEach(b => {
     b.addEventListener('click', () => {
-      const sortedVals = [...toolbox.blocks].sort((x, y) => y - x);
-      const v = sortedVals[+b.dataset.i];
-      const idx = toolbox.blocks.indexOf(v);
-      if (idx > -1) toolbox.blocks.splice(idx, 1);
+      const block = sorted[+b.dataset.i];
+      if (toolbox.blocksMode === 'takeaway') {
+        block.out = !block.out;
+      } else {
+        const idx = toolbox.blocks.indexOf(block);
+        if (idx > -1) toolbox.blocks.splice(idx, 1);
+      }
       renderToolbox();
     });
   });
@@ -778,6 +794,7 @@ function renderNumberLineTool(body) {
 
 /* --- ten frame tool --- */
 function renderTenFrameTool(body) {
+  const takeaway = toolbox.frameMode === 'takeaway';
   const blue = toolbox.frame.filter(c => c === 1).length;
   const red = toolbox.frame.filter(c => c === 2).length;
 
@@ -785,17 +802,31 @@ function renderTenFrameTool(body) {
     <div class="tb-frame">
       ${Array.from({ length: 10 }, (_, i) => {
         const c = toolbox.frame[offset + i];
-        return `<button class="tb-cell${c === 1 ? ' blue' : c === 2 ? ' red' : ''}" data-i="${offset + i}"></button>`;
+        const cls = c === 1 ? ' blue' : c === 2 ? (takeaway ? ' red crossed' : ' red') : '';
+        return `<button class="tb-cell${cls}" data-i="${offset + i}"></button>`;
       }).join('')}
     </div>`;
 
+  const total = takeaway
+    ? (red === 0 ? String(blue) : `${blue + red} − ${red} = ${blue}`)
+    : (blue + red === 0 ? '0' : `${blue} + ${red} = ${blue + red}`);
+
   body.innerHTML = `
-    <div class="tb-hint">Tap a square: once for blue, twice for red, three times to clear.</div>
-    <div class="tb-total">${blue + red === 0 ? '0' : `${blue} + ${red} = ${blue + red}`}</div>
+    <div class="tb-mode-row">
+      <button class="tb-mode${takeaway ? '' : ' active'}" data-m="add">➕ Add</button>
+      <button class="tb-mode${takeaway ? ' active' : ''}" data-m="takeaway">➖ Take Away</button>
+    </div>
+    <div class="tb-hint">${takeaway
+      ? 'Fill squares for your start number, then tap them again to take away (✕).'
+      : 'Tap a square: once for blue, twice for red, three times to clear.'}</div>
+    <div class="tb-total">${total}</div>
     ${frameHtml(0)}
     ${frameHtml(10)}
     <button class="tb-clear" id="tfClear">Clear</button>`;
 
+  body.querySelectorAll('.tb-mode').forEach(b => {
+    b.addEventListener('click', () => { toolbox.frameMode = b.dataset.m; renderToolbox(); });
+  });
   body.querySelectorAll('.tb-cell').forEach(b => {
     b.addEventListener('click', () => {
       const i = +b.dataset.i;
