@@ -266,6 +266,7 @@ function renderHome() {
 
   const screen = el(`
     <div class="screen home">
+      <a class="back-btn home-back" href="../">← Game Center</a>
       <div class="logo-wrap">
         <div class="logo">Spell <span class="quest">Quest</span></div>
         <div class="tagline">Letterland · 2nd Grade · ${ALL_WORDS.length} words</div>

@@ -228,6 +228,7 @@ function renderHome() {
 
   const screen = el(`
     <div class="screen home">
+      <a class="back-btn home-back" href="../">← Game Center</a>
       <div class="logo-wrap">
         <div class="logo">Times <span class="quest">Quest</span></div>
         <div class="tagline">Times tables · 1 to ${MAX_TABLE} · ${ALL_FACTS.length} facts</div>
