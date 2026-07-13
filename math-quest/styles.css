@@ -80,6 +80,8 @@ button { font-family: Nunito, sans-serif; }
 
 .fredoka { font-family: Fredoka, sans-serif; }
 
+.home-back { align-self: flex-start; text-decoration: none; }
+
 /* ---------- home ---------- */
 .home { max-width: 860px; gap: 28px; animation-duration: 0.4s; }
 
