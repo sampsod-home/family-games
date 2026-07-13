@@ -168,12 +168,17 @@ const state = {
 
 const toolbox = {
   open: false,
-  tool: 'blocks',          // blocks | numberline | tenframe
+  tool: 'blocks',          // blocks | numberline | tenframe | hundreds | bar | counters | array
   blocks: [],              // block values, e.g. [10, 10, 5, 1]
   nlStart: null,           // number line starting value
   nlHops: [],              // jump amounts, e.g. [10, 10, -1]
   frame: Array(20).fill(0),// ten frames: 0 empty, 1 blue, 2 red
-  frameMode: 'add'         // add | takeaway
+  frameMode: 'add',        // add | takeaway
+  hcCurrent: null,         // hundreds chart current square
+  hcTrail: [],             // hundreds chart visited squares
+  bar: { a: '', b: '', whole: '' },   // bar diagram values (strings)
+  counters: { red: 0, yellow: 0 },
+  arr: { rows: 3, cols: 4 }           // array builder
 };
 
 function resetToolboxWork() {
@@ -181,6 +186,11 @@ function resetToolboxWork() {
   toolbox.nlStart = null;
   toolbox.nlHops = [];
   toolbox.frame = Array(20).fill(0);
+  toolbox.hcCurrent = null;
+  toolbox.hcTrail = [];
+  toolbox.bar = { a: '', b: '', whole: '' };
+  toolbox.counters = { red: 0, yellow: 0 };
+  toolbox.arr = { rows: 3, cols: 4 };
 }
 
 const appEl = document.getElementById('app');
@@ -654,7 +664,11 @@ function renderToolbox() {
   const tabs = [
     { id: 'blocks',     label: '🧱 Blocks' },
     { id: 'numberline', label: '➡️ Number Line' },
-    { id: 'tenframe',   label: '🔟 Ten Frame' }
+    { id: 'tenframe',   label: '🔟 Ten Frame' },
+    { id: 'hundreds',   label: '💯 100 Chart' },
+    { id: 'bar',        label: '▭ Bar Model' },
+    { id: 'counters',   label: '🔴 Counters' },
+    { id: 'array',      label: '⬜ Array' }
   ];
 
   toolboxEl.innerHTML = `
@@ -675,26 +689,41 @@ function renderToolbox() {
   const body = toolboxEl.querySelector('#tbBody');
   if (toolbox.tool === 'blocks') renderBlocksTool(body);
   else if (toolbox.tool === 'numberline') renderNumberLineTool(body);
-  else renderTenFrameTool(body);
+  else if (toolbox.tool === 'tenframe') renderTenFrameTool(body);
+  else if (toolbox.tool === 'hundreds') renderHundredsTool(body);
+  else if (toolbox.tool === 'bar') renderBarTool(body);
+  else if (toolbox.tool === 'counters') renderCountersTool(body);
+  else renderArrayTool(body);
 }
 
 /* --- blocks tool --- */
 function renderBlocksTool(body) {
   const total = toolbox.blocks.reduce((s, v) => s + v, 0);
-  const sorted = [...toolbox.blocks].sort((a, b) => b - a);
+  const groups = [
+    { title: 'Hundreds', vals: toolbox.blocks.filter(v => v === 100) },
+    { title: 'Tens',     vals: toolbox.blocks.filter(v => v === 10) },
+    { title: 'Ones',     vals: toolbox.blocks.filter(v => v === 5 || v === 1).sort((a, b) => b - a) }
+  ];
+
+  const matCol = g => `
+    <div class="tb-mat-col">
+      <div class="tb-mat-head">${g.title}</div>
+      <div class="tb-mat-cells">
+        ${g.vals.map(v => {
+          const t = BLOCK_TYPES.find(b => b.v === v);
+          return `<button class="tb-block ${t.cls}" data-v="${v}" title="tap to remove">${t.label}</button>`;
+        }).join('')}
+      </div>
+      <div class="tb-mat-sum">${g.vals.reduce((s, v) => s + v, 0)}</div>
+    </div>`;
 
   body.innerHTML = `
-    <div class="tb-hint">Tap to add blocks. Tap a block to take it away.</div>
+    <div class="tb-hint">Tap to add blocks onto the mat. Tap a block to take it away.</div>
     <div class="tb-block-btns">
       ${BLOCK_TYPES.map(t => `<button class="tb-add ${t.cls}" data-v="${t.v}">+${t.label}</button>`).join('')}
     </div>
     <div class="tb-total">${total}</div>
-    <div class="tb-pile" id="tbPile">
-      ${sorted.map((v, i) => {
-        const t = BLOCK_TYPES.find(b => b.v === v);
-        return `<button class="tb-block ${t.cls}" data-i="${i}" title="tap to remove">${t.label}</button>`;
-      }).join('')}
-    </div>
+    <div class="tb-mat">${groups.map(matCol).join('')}</div>
     <button class="tb-clear" id="tbClear">Clear</button>`;
 
   body.querySelectorAll('.tb-add').forEach(b => {
@@ -702,9 +731,7 @@ function renderBlocksTool(body) {
   });
   body.querySelectorAll('.tb-block').forEach(b => {
     b.addEventListener('click', () => {
-      const sortedVals = [...toolbox.blocks].sort((x, y) => y - x);
-      const v = sortedVals[+b.dataset.i];
-      const idx = toolbox.blocks.indexOf(v);
+      const idx = toolbox.blocks.indexOf(+b.dataset.v);
       if (idx > -1) toolbox.blocks.splice(idx, 1);
       renderToolbox();
     });
@@ -820,6 +847,145 @@ function renderTenFrameTool(body) {
     });
   });
   body.querySelector('#tfClear').addEventListener('click', () => { toolbox.frame = Array(20).fill(0); renderToolbox(); });
+}
+
+/* --- hundreds chart tool --- */
+function renderHundredsTool(body) {
+  let cells = '';
+  for (let n = 1; n <= 100; n++) {
+    const cls = n === toolbox.hcCurrent ? ' current' : toolbox.hcTrail.includes(n) ? ' trail' : '';
+    cells += `<button class="tb-hc-cell${cls}" data-n="${n}">${n}</button>`;
+  }
+
+  body.innerHTML = `
+    <div class="tb-hint">Tap a number to start. Down a row is +10, across is +1.</div>
+    <div class="tb-jump-row">
+      <button class="tb-jump minus" data-m="-10">−10</button>
+      <button class="tb-jump minus" data-m="-1">−1</button>
+      <button class="tb-jump plus" data-m="1">+1</button>
+      <button class="tb-jump plus" data-m="10">+10</button>
+    </div>
+    <div class="tb-total">${toolbox.hcCurrent === null ? '–' : toolbox.hcCurrent}</div>
+    <div class="tb-hc">${cells}</div>
+    <button class="tb-clear" id="hcClear">Clear</button>`;
+
+  body.querySelectorAll('.tb-hc-cell').forEach(b => {
+    b.addEventListener('click', () => {
+      toolbox.hcCurrent = +b.dataset.n;
+      toolbox.hcTrail.push(toolbox.hcCurrent);
+      renderToolbox();
+    });
+  });
+  body.querySelectorAll('.tb-jump').forEach(b => {
+    b.addEventListener('click', () => {
+      if (toolbox.hcCurrent === null) return;
+      const next = toolbox.hcCurrent + (+b.dataset.m);
+      if (next >= 1 && next <= 100) {
+        toolbox.hcCurrent = next;
+        toolbox.hcTrail.push(next);
+        renderToolbox();
+      }
+    });
+  });
+  body.querySelector('#hcClear').addEventListener('click', () => {
+    toolbox.hcCurrent = null;
+    toolbox.hcTrail = [];
+    renderToolbox();
+  });
+}
+
+/* --- bar diagram tool --- */
+function renderBarTool(body) {
+  const b = toolbox.bar;
+  body.innerHTML = `
+    <div class="tb-hint">Type the numbers you know. Leave the mystery box as ?</div>
+    <div class="tb-bar">
+      <div class="tb-bar-whole">
+        <input class="tb-bar-input" id="barWhole" inputmode="numeric" placeholder="?" value="${esc(b.whole)}">
+        <span class="tb-bar-label">whole</span>
+      </div>
+      <div class="tb-bar-parts">
+        <div class="tb-bar-part">
+          <input class="tb-bar-input" id="barA" inputmode="numeric" placeholder="?" value="${esc(b.a)}">
+          <span class="tb-bar-label">part</span>
+        </div>
+        <div class="tb-bar-part">
+          <input class="tb-bar-input" id="barB" inputmode="numeric" placeholder="?" value="${esc(b.b)}">
+          <span class="tb-bar-label">part</span>
+        </div>
+      </div>
+    </div>
+    <div class="tb-hint">part + part = whole<br>whole − part = the other part</div>
+    <button class="tb-clear" id="barClear">Clear</button>`;
+
+  [['barWhole', 'whole'], ['barA', 'a'], ['barB', 'b']].forEach(([id, key]) => {
+    body.querySelector('#' + id).addEventListener('input', e => { toolbox.bar[key] = e.target.value; });
+  });
+  body.querySelector('#barClear').addEventListener('click', () => {
+    toolbox.bar = { a: '', b: '', whole: '' };
+    renderToolbox();
+  });
+}
+
+/* --- counters tool --- */
+function renderCountersTool(body) {
+  const { red, yellow } = toolbox.counters;
+  const total = red + yellow;
+  const chips = [...Array(red).fill('red'), ...Array(yellow).fill('yellow')];
+  const label = red && yellow ? `${red} + ${yellow} = ${total}` : String(total);
+
+  body.innerHTML = `
+    <div class="tb-hint">Add counters, then look at the pairs — one left over means odd!</div>
+    <div class="tb-block-btns">
+      <button class="tb-add one" id="addRed">+ Red</button>
+      <button class="tb-add five" id="addYellow">+ Yellow</button>
+    </div>
+    <div class="tb-total">${label}</div>
+    <div class="tb-pairs">
+      ${chips.map(c => `<button class="tb-counter ${c}" data-c="${c}" title="tap to remove"></button>`).join('')}
+    </div>
+    <button class="tb-clear" id="cClear">Clear</button>`;
+
+  body.querySelector('#addRed').addEventListener('click', () => { toolbox.counters.red += 1; renderToolbox(); });
+  body.querySelector('#addYellow').addEventListener('click', () => { toolbox.counters.yellow += 1; renderToolbox(); });
+  body.querySelectorAll('.tb-counter').forEach(b => {
+    b.addEventListener('click', () => {
+      const c = b.dataset.c;
+      if (toolbox.counters[c] > 0) toolbox.counters[c] -= 1;
+      renderToolbox();
+    });
+  });
+  body.querySelector('#cClear').addEventListener('click', () => { toolbox.counters = { red: 0, yellow: 0 }; renderToolbox(); });
+}
+
+/* --- array tool --- */
+function renderArrayTool(body) {
+  const { rows, cols } = toolbox.arr;
+  const sentence = Array(rows).fill(cols).join(' + ') + ' = ' + rows * cols;
+
+  body.innerHTML = `
+    <div class="tb-hint">Build rows and columns of dots, then count by rows.</div>
+    <div class="tb-stepper-row">
+      <div class="tb-stepper">
+        <button data-t="rows" data-d="-1">−</button><span>${rows} rows</span><button data-t="rows" data-d="1">+</button>
+      </div>
+      <div class="tb-stepper">
+        <button data-t="cols" data-d="-1">−</button><span>${cols} columns</span><button data-t="cols" data-d="1">+</button>
+      </div>
+    </div>
+    <div class="tb-total">${rows} × ${cols} = ${rows * cols}</div>
+    <div class="tb-array" style="grid-template-columns: repeat(${cols}, 26px)">
+      ${'<span class="tb-dot"></span>'.repeat(rows * cols)}
+    </div>
+    <div class="tb-hint">${sentence}</div>`;
+
+  body.querySelectorAll('.tb-stepper button').forEach(b => {
+    b.addEventListener('click', () => {
+      const t = b.dataset.t, d = +b.dataset.d;
+      toolbox.arr[t] = Math.min(10, Math.max(1, toolbox.arr[t] + d));
+      renderToolbox();
+    });
+  });
 }
 
 /* ---------- done ---------- */

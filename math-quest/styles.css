@@ -438,13 +438,13 @@ button { font-family: Nunito, sans-serif; }
   box-shadow: 0 3px 0 var(--shadow);
 }
 
-.tb-tabs { display: flex; gap: 8px; }
+.tb-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .tb-tab {
-  flex: 1;
   font-family: Nunito, sans-serif;
   font-weight: 800;
-  font-size: 13px;
-  padding: 8px 4px;
+  font-size: 11px;
+  line-height: 1.25;
+  padding: 7px 2px;
   border: 3px solid var(--ink);
   border-radius: 12px;
   background: #FFFFFF;
@@ -596,6 +596,149 @@ button { font-family: Nunito, sans-serif; }
   cursor: pointer;
 }
 .tb-mode.active { color: #FFFFFF; background: var(--accent); box-shadow: 0 3px 0 var(--accent-dark); }
+
+/* --- place value mat --- */
+.tb-mat { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; }
+.tb-mat-col {
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 150px;
+}
+.tb-mat-head {
+  font-family: Fredoka, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  color: #FFFFFF;
+  background: var(--ink);
+  padding: 4px 0;
+  border-radius: 8px 8px 0 0;
+}
+.tb-mat-cells {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: flex-start;
+  justify-content: center;
+  padding: 8px 4px;
+}
+.tb-mat-sum {
+  font-family: Fredoka, sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  text-align: center;
+  color: var(--ink);
+  border-top: 2px dashed var(--ink);
+  padding: 4px 0;
+}
+
+/* --- hundreds chart --- */
+.tb-hc {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+  width: 100%;
+}
+.tb-hc-cell {
+  aspect-ratio: 1;
+  font-family: Nunito, sans-serif;
+  font-weight: 800;
+  font-size: 10px;
+  color: var(--ink);
+  background: #FFFFFF;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+}
+.tb-hc-cell.trail { background: var(--track); }
+.tb-hc-cell.current { background: var(--accent); color: #FFFFFF; border-width: 2px; }
+
+/* --- bar diagram --- */
+.tb-bar { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.tb-bar-whole, .tb-bar-part {
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px 4px;
+}
+.tb-bar-whole { background: #FFFFFF; }
+.tb-bar-parts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tb-bar-input {
+  width: 90%;
+  font-family: Fredoka, sans-serif;
+  font-weight: 700;
+  font-size: 30px;
+  text-align: center;
+  color: var(--ink);
+  background: none;
+  border: none;
+}
+.tb-bar-label { font-weight: 800; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+/* --- counters --- */
+.tb-pairs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, 40px);
+  gap: 6px;
+  justify-content: center;
+  min-height: 88px;
+  width: 100%;
+  overflow-x: auto;
+}
+.tb-counter {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 3px solid var(--ink);
+  cursor: pointer;
+  padding: 0;
+}
+.tb-counter.red { background: #E4573D; }
+.tb-counter.yellow { background: #E8B93D; }
+
+/* --- array builder --- */
+.tb-stepper-row { display: flex; gap: 12px; }
+.tb-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: #FFFFFF;
+  padding: 4px 8px;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--ink);
+}
+.tb-stepper button {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  background: var(--bg);
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.tb-array { display: grid; gap: 4px; justify-content: center; }
+.tb-dot {
+  width: 22px;
+  height: 22px;
+  margin: 2px;
+  border-radius: 999px;
+  background: var(--blue);
+  border: 2px solid var(--ink);
+}
 
 /* ---------- small screens ---------- */
 @media (max-width: 480px) {
