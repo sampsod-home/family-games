@@ -32,14 +32,22 @@ const GCRewards = (() => {
 
   function summary() {
     const d = load();
-    const earnedCents = Object.keys(d.awarded).length * CENTS_PER_UNIT;
+    const paidAt = {};   // unit key -> timestamp of the payment that covered it
+    for (const p of d.payments) for (const k of (p.keys || [])) paidAt[k] = p.ts;
+    const allKeys = Object.keys(d.awarded);
+    const unpaidKeys = allKeys.filter(k => !(k in paidAt));
+    const earnedCents = allKeys.length * CENTS_PER_UNIT;
     const paidCents = d.payments.reduce((s, p) => s + p.cents, 0);
-    return { earnedCents, paidCents, balanceCents: earnedCents - paidCents, awarded: d.awarded, payments: d.payments };
+    return {
+      earnedCents, paidCents, balanceCents: unpaidKeys.length * CENTS_PER_UNIT,
+      awarded: d.awarded, payments: d.payments, paidAt, unpaidKeys
+    };
   }
 
-  function recordPayment(cents) {
+  /* Pay specific units — one payment record covering those unit keys. */
+  function recordPayment(keys) {
     const d = load();
-    d.payments.push({ cents, ts: Date.now() });
+    d.payments.push({ cents: keys.length * CENTS_PER_UNIT, ts: Date.now(), keys: [...keys] });
     save(d);
   }
 

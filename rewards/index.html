@@ -75,15 +75,54 @@
       box-shadow: 0 5px 0 var(--accent-dark);
     }
     .pay-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--accent-dark); }
+    .pay-btn:disabled { opacity: 0.5; cursor: default; }
     h2 { font-family: Fredoka, sans-serif; font-weight: 600; font-size: 22px; margin: 0 0 12px; }
-    .row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 2px solid var(--track); gap: 10px; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 2px solid var(--track); gap: 10px; }
     .row:last-child { border-bottom: none; }
-    .row .name { font-weight: 800; font-size: 15px; }
+    .row .name { font-weight: 800; font-size: 15px; flex: 1; }
     .row .game { font-weight: 700; font-size: 12px; color: var(--muted); display: block; }
     .row .when { font-weight: 700; font-size: 13px; color: var(--muted); white-space: nowrap; }
     .row .amt { font-family: Fredoka, sans-serif; font-weight: 600; font-size: 16px; color: var(--green); white-space: nowrap; }
     .row .amt.paid { color: var(--red); }
+    .row .paid-tag {
+      font-weight: 800;
+      font-size: 12px;
+      color: var(--green-dark);
+      background: #E3F4EA;
+      border: 2px solid var(--green);
+      border-radius: 999px;
+      padding: 3px 10px;
+      white-space: nowrap;
+    }
+    .row.paid-row .name, .row.paid-row .game { color: var(--muted); }
+    .row input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      accent-color: var(--green);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
     .empty { font-weight: 700; color: var(--muted); }
+    .select-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .select-total { font-family: Fredoka, sans-serif; font-weight: 600; font-size: 18px; }
+    .bar-btn {
+      font-family: Fredoka, sans-serif;
+      font-weight: 600;
+      font-size: 17px;
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      padding: 9px 22px;
+      cursor: pointer;
+    }
+    .bar-btn.ok { color: #FFFFFF; background: var(--green); box-shadow: 0 4px 0 var(--green-dark); }
+    .bar-btn.ok:disabled { opacity: 0.5; }
+    .bar-btn.cancel { color: var(--ink); background: #FFFFFF; box-shadow: 0 4px 0 var(--shadow); }
     dialog {
       border: 3px solid var(--ink);
       border-radius: 20px;
@@ -134,12 +173,19 @@
       <span class="balance-label">DAD OWES</span>
       <span class="balance" id="balance">$0.00</span>
       <span class="balance-sub" id="balanceSub"></span>
-      <button class="pay-btn" id="payBtn">Record a payment</button>
+      <button class="pay-btn" id="payBtn">Pay units…</button>
     </div>
 
     <div class="card">
       <h2>🏅 Units completed</h2>
       <div id="unitList"><span class="empty">No units completed yet — keep questing!</span></div>
+      <div class="select-bar" id="selectBar" hidden>
+        <span class="select-total" id="selectTotal"></span>
+        <span style="display:flex;gap:10px">
+          <button class="bar-btn cancel" id="selCancel">Cancel</button>
+          <button class="bar-btn ok" id="selPay">Mark paid</button>
+        </span>
+      </div>
     </div>
 
     <div class="card">
@@ -159,17 +205,6 @@
     </div>
   </dialog>
 
-  <dialog id="payDialog">
-    <h3>Record a payment</h3>
-    <p>How much did you pay? (dollars)</p>
-    <input id="payInput" inputmode="decimal" placeholder="0.00" autocomplete="off">
-    <div class="dlg-err" id="payErr"></div>
-    <div class="dlg-row">
-      <button class="dlg-btn cancel" id="payCancel">Cancel</button>
-      <button class="dlg-btn ok" id="payOk">Save</button>
-    </div>
-  </dialog>
-
   <script src="../rewards-lib.js"></script>
   <script>
     'use strict';
@@ -183,6 +218,7 @@
     };
     const GRADE_NAMES = { g2: '2nd Grade', g3: '3rd Grade', g4: '4th Grade' };
     let SPELL_UNITS = [];
+    let selecting = false;
 
     function dollars(cents) { return '$' + (cents / 100).toFixed(2); }
     function when(ts) { return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
@@ -200,42 +236,72 @@
 
     function render() {
       const s = GCRewards.summary();
-      document.getElementById('balance').textContent = dollars(Math.max(0, s.balanceCents));
+      document.getElementById('balance').textContent = dollars(s.balanceCents);
       document.getElementById('balanceSub').textContent =
         `earned ${dollars(s.earnedCents)} · paid ${dollars(s.paidCents)}`;
+      document.getElementById('payBtn').disabled = !s.unpaidKeys.length;
 
-      const entries = Object.entries(s.awarded).sort((a, b) => b[1] - a[1]);
+      /* units: unpaid first (newest first within each group) */
+      const entries = Object.entries(s.awarded)
+        .sort((a, b) => ((a[0] in s.paidAt) - (b[0] in s.paidAt)) || b[1] - a[1]);
       if (entries.length) {
         document.getElementById('unitList').innerHTML = entries.map(([k, ts]) => {
           const info = keyInfo(k);
-          return `<div class="row">
+          const paid = k in s.paidAt;
+          const check = selecting && !paid
+            ? `<input type="checkbox" class="sel" data-k="${k}" checked>` : '';
+          const right = paid
+            ? `<span class="paid-tag">✓ Paid ${when(s.paidAt[k])}</span>`
+            : `<span class="amt">+${GCRewards.CENTS_PER_UNIT}¢</span>`;
+          return `<div class="row${paid ? ' paid-row' : ''}">
+            ${check}
             <span class="name">${info.name}<span class="game">${info.game}</span></span>
             <span class="when">${when(ts)}</span>
-            <span class="amt">+${GCRewards.CENTS_PER_UNIT}¢</span>
+            ${right}
           </div>`;
         }).join('');
       }
 
+      const bar = document.getElementById('selectBar');
+      bar.hidden = !selecting;
+      if (selecting) {
+        document.querySelectorAll('input.sel').forEach(c => c.addEventListener('change', updateSelectTotal));
+        updateSelectTotal();
+      }
+
       if (s.payments.length) {
-        document.getElementById('payList').innerHTML = [...s.payments].reverse().map(p =>
-          `<div class="row">
-            <span class="name">Paid by Dad</span>
+        document.getElementById('payList').innerHTML = [...s.payments].reverse().map(p => {
+          const keys = p.keys || [];
+          const label = keys.length
+            ? (keys.length <= 2 ? keys.map(k => keyInfo(k).name).join(', ') : keys.length + ' units')
+            : 'Payment';
+          return `<div class="row">
+            <span class="name">${label}<span class="game">paid by Dad</span></span>
             <span class="when">${when(p.ts)}</span>
             <span class="amt paid">−${dollars(p.cents)}</span>
-          </div>`).join('');
+          </div>`;
+        }).join('');
       }
     }
 
-    /* --- PIN + payment flow --- */
-    const pinDialog = document.getElementById('pinDialog');
-    const payDialog = document.getElementById('payDialog');
+    function selectedKeys() {
+      return [...document.querySelectorAll('input.sel:checked')].map(c => c.dataset.k);
+    }
+    function updateSelectTotal() {
+      const n = selectedKeys().length;
+      document.getElementById('selectTotal').textContent =
+        n ? `${n} unit${n > 1 ? 's' : ''} · ${dollars(n * GCRewards.CENTS_PER_UNIT)}` : 'Nothing selected';
+      document.getElementById('selPay').disabled = !n;
+    }
 
+    /* --- PIN --- */
+    const pinDialog = document.getElementById('pinDialog');
     function askPin() {
       return new Promise(resolve => {
         const first = !GCRewards.hasPin();
         document.getElementById('pinTitle').textContent = first ? 'Set a parent PIN' : 'Grown-ups only';
         document.getElementById('pinMsg').textContent = first
-          ? 'Choose a 4-digit PIN. You’ll need it to record payments.'
+          ? 'Choose a 4-digit PIN. You’ll need it to mark units paid.'
           : 'Enter the 4-digit PIN.';
         const input = document.getElementById('pinInput');
         const err = document.getElementById('pinErr');
@@ -261,31 +327,19 @@
       });
     }
 
+    /* --- selection flow --- */
     document.getElementById('payBtn').addEventListener('click', async () => {
-      if (!await askPin()) return;
-      const s = GCRewards.summary();
-      const input = document.getElementById('payInput');
-      const err = document.getElementById('payErr');
-      input.value = (Math.max(0, s.balanceCents) / 100).toFixed(2);
-      err.textContent = '';
-      payDialog.showModal();
-      setTimeout(() => input.focus(), 50);
-
-      const done = () => { payDialog.close(); cleanup(); };
-      const onOk = () => {
-        const cents = Math.round(parseFloat(input.value) * 100);
-        if (isNaN(cents) || cents <= 0) { err.textContent = 'Enter an amount above zero.'; return; }
-        GCRewards.recordPayment(cents);
-        done();
-        render();
-      };
-      const onCancel = done;
-      function cleanup() {
-        document.getElementById('payOk').removeEventListener('click', onOk);
-        document.getElementById('payCancel').removeEventListener('click', onCancel);
-      }
-      document.getElementById('payOk').addEventListener('click', onOk);
-      document.getElementById('payCancel').addEventListener('click', onCancel);
+      if (selecting || !await askPin()) return;
+      selecting = true;
+      render();
+    });
+    document.getElementById('selCancel').addEventListener('click', () => { selecting = false; render(); });
+    document.getElementById('selPay').addEventListener('click', () => {
+      const keys = selectedKeys();
+      if (!keys.length) return;
+      GCRewards.recordPayment(keys);
+      selecting = false;
+      render();
     });
 
     /* --- bootstrap --- */
