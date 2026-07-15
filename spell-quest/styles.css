@@ -341,6 +341,15 @@ button { font-family: Nunito, sans-serif; }
   animation-duration: 0.4s;
   text-align: center;
 }
+.reward-banner {
+  padding: 14px 24px;
+  font-family: Fredoka, sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  text-align: center;
+}
+.reward-cents { color: var(--green); font-weight: 700; }
+
 .done-badge { font-size: 72px; animation: sq-bounce 1.2s ease infinite; }
 .done-title { font-family: Fredoka, sans-serif; font-weight: 700; font-size: 44px; }
 .done-stats { padding: 28px 40px; display: flex; gap: 36px; }

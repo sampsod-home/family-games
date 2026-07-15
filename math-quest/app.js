@@ -217,6 +217,24 @@ function unitProgress(unitId, stats) {
 }
 function isMastered(unitId, stats) { return unitProgress(unitId, stats) >= MASTER_TARGET; }
 
+/* ================= unit rewards ================= */
+function awardCheck() {
+  if (typeof GCRewards === 'undefined') return [];
+  const stats = loadStats();
+  const keys = [], names = {};
+  for (const gid of Object.keys(GRADES)) {
+    for (const u of GRADES[gid].units) {
+      const rec = stats[gid + ':' + u.id];
+      if (rec && rec.firstTry >= MASTER_TARGET) {
+        const k = 'math:' + gid + ':' + u.id;
+        keys.push(k);
+        names[k] = u.name;
+      }
+    }
+  }
+  return GCRewards.checkAwards(keys).map(k => names[k]);
+}
+
 /* ================= sound effects (Web Audio) ================= */
 let audioCtx = null;
 function ctx() {
@@ -381,6 +399,7 @@ function nextQuestion() {
   if (state.idx + 1 >= state.queue.length) {
     state.screen = 'done';
     state.phase = 'ask';
+    state.newAwards = awardCheck();
     sfxDone();
     render();
     burst();
@@ -994,10 +1013,12 @@ function renderDone() {
   const solved = state.results.filter(r => r !== 'missed').length;
   const trophy = stars >= Math.max(1, state.queue.length - 2);
 
+  const awards = state.newAwards || [];
   const screen = el(`
     <div class="screen done">
       <div class="done-badge">${trophy ? '🏆' : '⭐'}</div>
       <div class="done-title">${trophy ? 'Math Champion!' : 'Great job!'}</div>
+      ${awards.length ? `<div class="card reward-banner">🎉 ${awards.map(esc).join(' and ')} complete! <span class="reward-cents">+${awards.length * GCRewards.CENTS_PER_UNIT}¢</span></div>` : ''}
       <div class="card done-stats">
         <div><div class="stat-num first">${stars}</div><div class="stat-label">FIRST TRY</div></div>
         <div><div class="stat-num solved">${solved}</div><div class="stat-label">SOLVED</div></div>
@@ -1016,4 +1037,5 @@ function renderDone() {
 
 /* ================= bootstrap ================= */
 applyTheme();
+awardCheck();
 render();

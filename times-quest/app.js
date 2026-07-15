@@ -51,6 +51,17 @@ function saveStat(fact, firstTry) {
 }
 function isMastered(fact, stats) { const r = stats[fact]; return !!r && r.firstTry >= 2; }
 
+/* ================= unit rewards ================= */
+function awardCheck() {
+  if (typeof GCRewards === 'undefined') return [];
+  const stats = loadStats();
+  const keys = [];
+  UNITS.forEach((u, i) => {
+    if (u.facts.every(f => isMastered(f, stats))) keys.push('times:x' + (i + 1));
+  });
+  return GCRewards.checkAwards(keys).map(k => '×' + k.slice(7) + ' table');
+}
+
 /* ================= sound effects (Web Audio) ================= */
 let audioCtx = null;
 function ctx() {
@@ -188,6 +199,7 @@ function nextFact() {
   if (state.idx + 1 >= state.queue.length) {
     state.screen = 'done';
     state.phase = 'answer';
+    state.newAwards = awardCheck();
     sfxDone();
     render();
     burst();
@@ -427,10 +439,12 @@ function renderDone() {
   const solved = state.results.filter(r => r !== 'missed').length;
   const trophy = stars >= Math.max(1, state.queue.length - 2);
 
+  const awards = state.newAwards || [];
   const screen = el(`
     <div class="screen done">
       <div class="done-badge">${trophy ? '🏆' : '⭐'}</div>
       <div class="done-title">${trophy ? 'Math Star!' : 'Great job!'}</div>
+      ${awards.length ? `<div class="card reward-banner">🎉 ${awards.join(' and ')} complete! <span class="reward-cents">+${awards.length * GCRewards.CENTS_PER_UNIT}¢</span></div>` : ''}
       <div class="card done-stats">
         <div><div class="stat-num first">${stars}</div><div class="stat-label">FIRST TRY</div></div>
         <div><div class="stat-num solved">${solved}</div><div class="stat-label">SOLVED</div></div>
@@ -450,4 +464,5 @@ function renderDone() {
 /* ================= bootstrap ================= */
 applyTheme();
 document.addEventListener('keydown', onKeydown);
+awardCheck();
 render();

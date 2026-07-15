@@ -44,6 +44,18 @@ function saveStat(word, firstTry) {
 }
 function isMastered(word, stats) { const r = stats[word]; return !!r && r.firstTry >= 2; }
 
+/* ================= unit rewards ================= */
+function awardCheck() {
+  if (typeof GCRewards === 'undefined' || !UNITS.length) return [];
+  const stats = loadStats();
+  const keys = [];
+  UNITS.forEach((u, i) => {
+    const uniq = [...new Set(u.words)];
+    if (uniq.length && uniq.every(w => isMastered(w, stats))) keys.push('spell:u' + i);
+  });
+  return GCRewards.checkAwards(keys).map(k => UNITS[+k.slice(7)].name);
+}
+
 /* ================= sound effects (Web Audio) ================= */
 let audioCtx = null;
 function ctx() {
@@ -222,6 +234,7 @@ function nextWord() {
   if (state.idx + 1 >= state.queue.length) {
     state.screen = 'done';
     state.phase = 'listen';
+    state.newAwards = awardCheck();
     sfxDone();
     render();
     burst();
@@ -452,10 +465,12 @@ function renderDone() {
   const solved = state.results.filter(r => r !== 'missed').length;
   const trophy = stars >= Math.max(1, state.queue.length - 2);
 
+  const awards = state.newAwards || [];
   const screen = el(`
     <div class="screen done">
       <div class="done-badge">${trophy ? '🏆' : '⭐'}</div>
       <div class="done-title">${trophy ? 'Super Speller!' : 'Great job!'}</div>
+      ${awards.length ? `<div class="card reward-banner">🎉 ${awards.map(esc).join(' and ')} complete! <span class="reward-cents">+${awards.length * GCRewards.CENTS_PER_UNIT}¢</span></div>` : ''}
       <div class="card done-stats">
         <div><div class="stat-num first">${stars}</div><div class="stat-label">FIRST TRY</div></div>
         <div><div class="stat-num solved">${solved}</div><div class="stat-label">SPELLED</div></div>
@@ -478,6 +493,7 @@ async function init() {
   const res = await fetch('word-list.json');
   UNITS = (await res.json()).map(u => ({ name: u.name, words: u.words }));
   ALL_WORDS = [...new Set(UNITS.flatMap(u => u.words))];
+  awardCheck();
   render();
 
   if ('serviceWorker' in navigator) {
